@@ -15,25 +15,25 @@ typedef std::vector<SerializableObject::Retainer<Track>>   TrackRetainerVector;
 static void
 _merge_invisible_items(
     Track*                     flat_track,
-    const std::vector<Retainer<Item>>& items,
+    const std::vector<SerializableObject::Retainer<Item>>& items,
     std::optional<TimeRange>   trim_range,
     ErrorStatus*               error_status)
 {
     RationalTime merged_start_time;
-    RationalTime merged_duration = RationalTime(0, 1); 
+    RationalTime merged_duration = RationalTime(0, 1);
 
     for (size_t index = 0; index < items.size(); ++index)
     {
         auto& item = items[index];
 
-        if (!item->visible()) 
+        if (!item->visible())
         {
             TimeRange item_range = item->trimmed_range();
-            if (merged_duration == RationalTime(0, 1)) 
+            if (merged_duration == RationalTime(0, 1))
             {
                 merged_start_time = item_range.start_time();
             }
-            merged_duration += item_range.duration(); 
+            merged_duration += item_range.duration();
         }
         else // if item is visible
         {
@@ -42,7 +42,7 @@ _merge_invisible_items(
             {
                 flat_track->insert_child(
                     static_cast<int>(flat_track->children().size()),
-                    new Gap(TimeRange(merged_start_time, merged_duration), error_status)
+                    new Gap(TimeRange(merged_start_time, merged_duration))
                 );
                 merged_duration = RationalTime(0, 1); // resetting after gap insertion
             }
@@ -66,7 +66,7 @@ _merge_invisible_items(
     {
         flat_track->insert_child(
             static_cast<int>(flat_track->children().size()),
-            new Gap(TimeRange(merged_start_time, merged_duration), error_status)
+            new Gap(TimeRange(merged_start_time, merged_duration))
         );
     }
 }
@@ -120,9 +120,9 @@ _flatten_next_item(
         }
         track_map = &result.first->second;
     }
-    
+
     // collect invisible items to merge into flat track
-    std::vector<Retainer<Item>> items_to_merge;
+    std::vector<SerializableObject::Retainer<Item>> items_to_merge;
 
     for (auto child: track->children())
     {
@@ -145,7 +145,7 @@ _flatten_next_item(
         if (!item || item->visible() || track_index == 0)
         {
             // merge invisible items before inserting into track
-            merge_invisible_items(flat_track, items_to_merge, trim_range, error_status);
+            _merge_invisible_items(flat_track, items_to_merge, trim_range, error_status);
             items_to_merge.clear(); 
             
             flat_track->insert_child(
