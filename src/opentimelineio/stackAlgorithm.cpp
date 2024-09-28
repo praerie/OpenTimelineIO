@@ -28,6 +28,7 @@ _merge_invisible_items(
 
         if (!item->visible())
         {
+            std::cout << "test" << std::endl;
             TimeRange item_range = item->trimmed_range();
             if (merged_duration == RationalTime(0, 1))
             {
